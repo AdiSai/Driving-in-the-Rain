@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # Adapted from https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/manual_control.py
+# Utilizes game_loop (l669+) from https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/automatic_control.py
 
 """
 Adapted from the manual control example of CARLA
@@ -52,6 +53,8 @@ import math
 import random
 import re
 import weakref
+
+import rain_driving_agent as rda
 
 try:
     import pygame
@@ -1013,16 +1016,40 @@ def game_loop(args):
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud, args)
         controller = KeyboardControl(world, args.autopilot)
-
+        agent = rda.RainDrivingAgent(world.player)
+        spawn_point = world.map.get_spawn_points()[0]
+        agent.set_destination((spawn_point.location.x,
+                               spawn_point.location.y,
+                               spawn_point.location.z))
         clock = pygame.time.Clock()
         while True:
+            """
             clock.tick_busy_loop(60)
             if controller.parse_events(client, world, clock):
                 return
             world.tick(clock)
             world.render(display)
             pygame.display.flip()
+            """
+            clock.tick_busy_loop(60)
+            if controller.parse_events():
+                return
 
+            # As soon as the server is ready continue!
+            if not world.world.wait_for_tick(10.0):
+                continue
+
+            if controller.parse_events():
+                    return
+
+            # as soon as the server is ready continue!
+            world.world.wait_for_tick(10.0)
+            world.tick(clock)
+            world.render(display)
+            pygame.display.flip()
+            control = agent.run_step()
+            control.manual_gear_shift = False
+            world.player.apply_control(control)
     finally:
 
         if (world and world.recording_enabled):
