@@ -1032,14 +1032,14 @@ def game_loop(args):
             pygame.display.flip()
             """
             clock.tick_busy_loop(60)
-            if controller.parse_events():
+            if controller.parse_events(client, world, clock):
                 return
 
             # As soon as the server is ready continue!
             if not world.world.wait_for_tick(10.0):
                 continue
 
-            if controller.parse_events():
+            if controller.parse_events(client, world, clock):
                     return
 
             # as soon as the server is ready continue!

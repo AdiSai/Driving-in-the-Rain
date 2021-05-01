@@ -18,16 +18,21 @@ try:
 except IndexError:
     pass
 
+try:
+    sys.path.append('../PythonAPI/carla')
+except IndexError:
+	pass
+
 
 # ==============================================================================
 # -- imports -------------------------------------------------------------------
 # ==============================================================================
 
 import carla
-from carla.agents.navigation.agent import Agent, AgentState
-from carla.agents.navigation.local_planner import LocalPlanner
-from carla.agents.navigation.global_route_planner import GlobalRoutePlanner
-from carla.agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+from agents.navigation.agent import Agent, AgentState
+from agents.navigation.local_planner import LocalPlanner
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 class RainDrivingAgent(Agent):
 
@@ -36,7 +41,7 @@ class RainDrivingAgent(Agent):
 
         :param vehicle: actor to apply to local planner logic onto
         """
-        super(BasicAgent, self).__init__(vehicle)
+        super(RainDrivingAgent, self).__init__(vehicle)
 
         self._proximity_tlight_threshold = 5.0  # meters
         self._proximity_vehicle_threshold = 10.0  # meters
@@ -57,15 +62,18 @@ class RainDrivingAgent(Agent):
         
         # create the camera
         camera_bp = self._world.get_blueprint_library().find('sensor.camera.rgb')
-        camera_bp.set_attribute('image_size_x', 1920//2)
-        camera_bp.set_attribute('image_size_y', 1080//2)
-        camera_bp.set_attribute('fov', '90')
+        camera_bp.set_attribute('image_size_x', str(1920//2))
+        camera_bp.set_attribute('image_size_y', str(1080//2))
+        camera_bp.set_attribute('fov', str(90))
         camera_transform = carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15))
-        self._camera = self._world.spawn_actor(camera_bp, camera_transform, attach_to=self.car)
-        self._camera.listen(lambda image: _process_image(self, image))
+        self._camera = self._world.spawn_actor(camera_bp, camera_transform, attach_to=self._vehicle)
+        self._camera.listen(lambda image: self._process_image(image))
+        self._curr_image = None
     
     def _process_image(self, image):
-        pass
+        self._curr_image = image
+        print('here')
+        image.save_to_disk('_out/%08d' % image.frame)
 
     def set_destination(self, location):
         """
