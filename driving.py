@@ -2,6 +2,18 @@
 
 # Adapted from https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/manual_control.py
 
+"""
+Adapted from the manual control example of CARLA
+Use ARROWS or WASD keys for control.
+    W            : throttle
+    S            : brake
+    A/D          : steer left/right
+    Q            : toggle reverse
+    Space        : hand-brake
+    P            : toggle autopilot
+    C            : change weather (Shift+C reverse)
+"""
+
 from __future__ import print_function
 
 
