@@ -2,7 +2,6 @@
 
 
 import carla
-import weakref
 from agents.navigation.agent import Agent, AgentState
 from agents.navigation.local_planner import LocalPlanner
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -40,9 +39,8 @@ class RainDrivingAgent(Agent):
         camera_bp.set_attribute('image_size_y', 1080//2)
         camera_bp.set_attribute('fov', '90')
         camera_transform = carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15))
-        self.camera = self.world.spawn_actor(camera_bp, camera_transform, attach_to=self.car)
-        weak_self = weakref.ref(self)
-        self.camera.listen(lambda image: _process_image(weak_self, image))
+        self._camera = self._world.spawn_actor(camera_bp, camera_transform, attach_to=self.car)
+        self._camera.listen(lambda image: _process_image(self, image))
     
     def _process_image(self, image):
         pass
