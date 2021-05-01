@@ -1,11 +1,33 @@
 # Adapted from https://github.com/carla-simulator/carla/blob/master/PythonAPI/carla/agents/navigation/basic_agent.py
 
 
+# ==============================================================================
+# -- find carla module ---------------------------------------------------------
+# ==============================================================================
+
+
+import glob
+import os
+import sys
+
+try:
+    sys.path.append(glob.glob('../PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
+
+
+# ==============================================================================
+# -- imports -------------------------------------------------------------------
+# ==============================================================================
+
 import carla
-from agents.navigation.agent import Agent, AgentState
-from agents.navigation.local_planner import LocalPlanner
-from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+from carla.agents.navigation.agent import Agent, AgentState
+from carla.agents.navigation.local_planner import LocalPlanner
+from carla.agents.navigation.global_route_planner import GlobalRoutePlanner
+from carla.agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 class RainDrivingAgent(Agent):
 
