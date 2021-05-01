@@ -79,8 +79,8 @@ def inference(images, is_training):
          output = tf.compat.v1.layers.batch_normalization(output, training=is_training, name='bn_1')
          output_shortcut = tf.nn.relu(output, name='relu_1')
   
-   #  layers 2 to 25
-    for i in range(12):
+   #  layers 2 to 29
+    for i in range(14):
         with tf.compat.v1.variable_scope('layer_%d'%(i*2+2)):	
              output = tf.compat.v1.layers.conv2d(output_shortcut, num_feature, KernelSize, padding='same', kernel_initializer = initializer, 
                                        kernel_regularizer = regularizer, name=('conv_%d'%(i*2+2)))
@@ -96,11 +96,11 @@ def inference(images, is_training):
 
         output_shortcut = tf.add(output_shortcut, output)   # shortcut
 
-   # layer 26
-    with tf.compat.v1.variable_scope('layer_26'):
+   # layer 30
+    with tf.compat.v1.variable_scope('layer_30'):
          output = tf.compat.v1.layers.conv2d(output_shortcut, num_channels, KernelSize, padding='same',   kernel_initializer = initializer, 
-                                   kernel_regularizer = regularizer, name='conv_26')
-         neg_residual = tf.compat.v1.layers.batch_normalization(output, training=is_training, name='bn_26')
+                                   kernel_regularizer = regularizer, name='conv_30')
+         neg_residual = tf.compat.v1.layers.batch_normalization(output, training=is_training, name='bn_30')
 
     final_out = tf.add(images, neg_residual)
 
