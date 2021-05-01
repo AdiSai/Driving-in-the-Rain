@@ -40,9 +40,12 @@ model_name = 'model-epoch'   # saved model's name
 input_path = "./TrainData/input/"    # the path of rainy images
 gt_path = "./TrainData/label/"       # the path of ground truth
 
-
-input_files = os.listdir(input_path)
-gt_files = os.listdir(gt_path) 
+try:
+    input_files = os.listdir(input_path)
+    gt_files = os.listdir(gt_path)
+except:
+    input_files = []
+    gt_files = []
  
 # randomly select image patches
 def _parse_function(filename, label):  
@@ -65,7 +68,7 @@ def _parse_function(filename, label):
 
 
 # network structure
-def inference(images, is_training):
+def inference(images, is_training, middle_layers=14):
     regularizer = tf.keras.regularizers.l2(l = 0.5 * (1e-10))
     initializer = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
 
@@ -79,8 +82,8 @@ def inference(images, is_training):
          output = tf.compat.v1.layers.batch_normalization(output, training=is_training, name='bn_1')
          output_shortcut = tf.nn.relu(output, name='relu_1')
   
-   #  layers 2 to 29
-    for i in range(14):
+   #  layers 2 to last_layer - 1
+    for i in range(middle_layers):
         with tf.compat.v1.variable_scope('layer_%d'%(i*2+2)):	
              output = tf.compat.v1.layers.conv2d(output_shortcut, num_feature, KernelSize, padding='same', kernel_initializer = initializer, 
                                        kernel_regularizer = regularizer, name=('conv_%d'%(i*2+2)))
@@ -96,11 +99,11 @@ def inference(images, is_training):
 
         output_shortcut = tf.add(output_shortcut, output)   # shortcut
 
-   # layer 30
-    with tf.compat.v1.variable_scope('layer_30'):
+   # last_layer
+    with tf.compat.v1.variable_scope('layer_%d'%(2*middle_layers + 2)):
          output = tf.compat.v1.layers.conv2d(output_shortcut, num_channels, KernelSize, padding='same',   kernel_initializer = initializer, 
-                                   kernel_regularizer = regularizer, name='conv_30')
-         neg_residual = tf.compat.v1.layers.batch_normalization(output, training=is_training, name='bn_30')
+                                   kernel_regularizer = regularizer, name='conv_%d'%(2*middle_layers + 2))
+         neg_residual = tf.compat.v1.layers.batch_normalization(output, training=is_training, name='bn_%d'%(2*middle_layers + 2))
 
     final_out = tf.add(images, neg_residual)
 

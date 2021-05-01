@@ -1007,7 +1007,7 @@ def game_loop(args):
 
     try:
         client = carla.Client(args.host, args.port)
-        client.set_timeout(2.0)
+        client.set_timeout(4.0)
 
         display = pygame.display.set_mode(
             (args.width, args.height),
@@ -1015,7 +1015,7 @@ def game_loop(args):
 
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud, args)
-        controller = KeyboardControl(world, args.autopilot)
+        controller = KeyboardControl(world, True)
         agent = rda.RainDrivingAgent(world.player)
         spawn_point = world.map.get_spawn_points()[0]
         agent.set_destination((spawn_point.location.x,

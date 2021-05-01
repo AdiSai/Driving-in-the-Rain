@@ -9,6 +9,20 @@
 import glob
 import os
 import sys
+import skimage.io
+import numpy as np
+import tensorflow as tf
+try:
+    sys.path.append('./image_training')
+except IndexError:
+    pass
+from image_training import training_v2 as Network
+
+tf.compat.v1.disable_eager_execution()
+os.environ['CUDA_VISIBLE_DEVICES'] = "0"  # select GPU device
+pre_trained_model_path = './image_training/model/trained/model'
+tf.compat.v1.reset_default_graph()
+
 
 try:
     sys.path.append(glob.glob('../PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
@@ -69,11 +83,46 @@ class RainDrivingAgent(Agent):
         self._camera = self._world.spawn_actor(camera_bp, camera_transform, attach_to=self._vehicle)
         self._camera.listen(lambda image: self._process_image(image))
         self._curr_image = None
+        self._save_count = 0
     
     def _process_image(self, image):
         self._curr_image = image
-        print('here')
-        image.save_to_disk('_out/%08d' % image.frame)
+        """
+        image_array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+        image_array = np.reshape(image_array, (image.height, image.width, 4))
+        image_array = image_array[:, :, :3]
+        image_array = image_array[:, :, ::-1]
+        """
+        file_name = 'curr.jpg'
+        image.save_to_disk(file_name)
+        def parse_file(filename):
+            image_string = tf.io.read_file(filename)  
+            image_decoded = tf.image.decode_jpeg(image_string, channels=3)  
+            return tf.cast(image_decoded, tf.float32)/255.0
+        whole_path = [file_name]
+        filename_tensor = tf.convert_to_tensor(value=whole_path, dtype=tf.string)     
+        dataset = tf.data.Dataset.from_tensor_slices((filename_tensor))
+        dataset = dataset.map(parse_file)    
+        dataset = dataset.prefetch(buffer_size=1)
+        dataset = dataset.batch(batch_size=1).repeat()  
+        iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
+        image_array = iterator.get_next() 
+        output = Network.inference(image_array, is_training=False, middle_layers=12)
+        output = tf.clip_by_value(output, 0., 1.)
+        output = output[0,:,:,:]
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.allow_growth=True   
+        saver = tf.compat.v1.train.Saver()
+        with tf.compat.v1.Session(config=config) as sess: 
+            with tf.device('/gpu:0'): 
+                saver.restore(sess, pre_trained_model_path)
+                derained, ori = sess.run([output, image_array])              
+                derained = np.uint8(derained* 255.)
+                skimage.io.imsave('curr_derained.png', derained)
+                if self._save_count % 6 == 0:
+                    image.save_to_disk('_out/%08d_orig' % image.frame)
+                    skimage.io.imsave('_out/%08d_derained.png' % image.frame, derained)
+        self._save_count += 1
 
     def set_destination(self, location):
         """
